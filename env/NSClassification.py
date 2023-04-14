@@ -36,10 +36,8 @@ class NSBaseEnv():
             vpi = np.multiply(new_Y, target_prob).sum(axis=1)
 
             # sample a dataset
-            # sample_size = new_Y.shape[0]
             num_action = new_Y.shape[1]
             sample_context_id = np.random.choice(new_Y.shape[0], size=sample_size)
-            # sample_context_id = np.arange(new_Y.shape[0])
             sample_action = []
             sample_pb = []
             sample_feedbacks = []
@@ -52,15 +50,6 @@ class NSBaseEnv():
             sample_action = np.array(sample_action)
             sample_pb = np.array(sample_pb)
             sample_feedbacks = np.array(sample_feedbacks)
-
-            # sample a dataset without replace for context
-            # sample_context_id = np.arange(new_Y.shape[0])
-            # sample_prob = np.ones(new_Y.shape) / new_Y.shape[1]
-            # c = sample_prob.cumsum(axis=1)
-            # u = np.random.rand(len(c), 1)
-            # sample_action = (u < c).argmax(axis=1)
-            # sample_feedbacks = np.array([new_Y[i, sample_action[i]] for i in range(len(c))])
-            # sample_pb = np.take_along_axis(sample_prob, np.expand_dims(sample_action, axis=1), axis=1).flatten()
 
             data_dict = {
                 'round_id': round_id,
@@ -75,7 +64,6 @@ class NSBaseEnv():
             }
             data_list.append(data_dict)
 
-        # print('saving data/yeast/ns_data{}'.format(round_id))
         np.save(data_name, data_list)
 
     def num_round(self):
@@ -159,37 +147,8 @@ class NSClassification(NSBaseEnv):
             pos_Y = scipy.sparse.csr_matrix((ns_data, all_Y.indices, all_Y.indptr)).toarray()
             additive_Y = np.random.uniform(0.0, 1.0, pos_Y.shape) * np.random.choice([1.0, 0.0], pos_Y.shape, p=[flip_prob, 1-flip_prob])
 
-            # flip with 10% probability
-            # binary_pre_Y = 2 * pre_Y - 1
-            # flip_mask = np.random.choice([1.0, -1.0], pre_Y.shape, p=[1-flip_prob, flip_prob])
-            # new_Y = (binary_pre_Y * flip_mask + 1) / 2
-
-            # keep half of true positives
-            # pos_var = all_Y.data.copy()
-            # uniform_mask = np.random.uniform(0, 1, pos_var.shape[0]) >= (1-keep_prob)
-            # uniform_mask = uniform_mask.astype(float)
-            # new_pos_var = pos_var * uniform_mask
-            # new_additive_Y = scipy.sparse.csr_matrix((new_pos_var, all_Y.indices, all_Y.indptr)).toarray()
-            # new_Y = (new_Y + new_additive_Y).clip(min=0.0, max=1.0)
-
             new_Y = (pos_Y + additive_Y).clip(min=0.0, max=1.0)
             all_Ys.append(new_Y)
-
-            # train a policy on training set and compute the value of the policy on testing set
-            # clf = SVC(kernel='linear', C=1.0, probability=True)
-            # multi_clf = MultiOutputClassifier(clf, n_jobs=None)
-            # multi_clf.fit(trn_X, np.asarray(trn_Y[:num_trn].todense()))
-            # multi_clf.fit(all_X[:num_trn], np.sign(pre_Y[:num_trn]))
-            # multi_clf.fit(all_X[trn_id], np.sign(pre_Y[trn_id]))
-
-            # compute the value of the policy on testing set
-            # output_prob = multi_clf.predict_proba(all_X)
-            # output_prob = np.stack([output_prob[i][:, 1] for i in range(len(output_prob))], axis=1)
-            # target_prob = np.exp(temp * output_prob) / np.sum(np.exp(temp * output_prob), axis=1, keepdims=True)
-            print(new_Y.mean(), (new_Y * target_prob).sum() / new_Y.shape[0])
-            # all_Ps.append(target_prob)
-
-            # pre_Y = new_Y
 
         np.save('data/{}/ns_Y'.format(self.dir_name), all_Ys)
         np.save('data/{}/target_prob'.format(self.dir_name), target_prob)
@@ -233,7 +192,6 @@ class SClassification():
 
             trn_X, trn_Y = all_X[:num_trn], all_Y[:num_trn]
             tst_X, tst_Y = all_X[num_trn:], all_Y[num_trn:]
-            # val_X, val_Y = all_X[2*num_trn:], all_Y[2*num_trn:]
 
             # train a policy on training set and compute the value of the policy on testing set
             clf = SVC(kernel='linear', C=1.0, probability=True)
@@ -257,8 +215,6 @@ class SClassification():
             np.save('data/{}/stationary_X'.format(self.dir_name), tst_X)
             np.save('data/{}/stationary_Y'.format(self.dir_name), tst_Y)
             np.save('data/{}/stationary_target_prob'.format(self.dir_name), target_prob)
-            # np.save('data/{}/train_X'.format(self.dir_name), tst_X)
-            # np.save('data/{}/train_Y'.format(self.dir_name), tst_Y)
 
     def sample_stationary_data(self, num_run, sample_size, fix_seed=1567):
         val_Y = np.load('data/{}/stationary_Y.npy'.format(self.dir_name), allow_pickle=True).item()

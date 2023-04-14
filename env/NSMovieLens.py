@@ -48,37 +48,3 @@ class NSMovieLens(NSBaseEnv):
         self.all_X = X
         np.save('data/{}/target_prob'.format(self.dir_name), self.target_prob)
         np.save('data/{}/population_X'.format(self.dir_name), self.all_X)
-
-    # def sample_data(self):
-    #     if self.all_Ys is None or self.target_prob is None or self.all_X is None:
-    #         self.read_data()
-    #
-    #     num_round = len(self.all_Ys)
-    #     target_prob = self.target_prob
-    #
-    #     for round_id in range(num_round):
-    #         print('sample data round {}'.format(round_id))
-    #         np.random.seed(1567 + round_id)
-    #         new_Y = self.all_Ys[round_id]
-    #         vpi = np.multiply(new_Y, target_prob).sum(axis=1)
-    #
-    #         # sample a dataset
-    #         sample_prob = np.ones(new_Y.shape) / new_Y.shape[1]
-    #
-    #         c = sample_prob.cumsum(axis=1)
-    #         u = np.random.rand(len(c), 1)
-    #         actions = (u < c).argmax(axis=1)
-    #         feedbacks = np.array([new_Y[i, actions[i]] for i in range(len(c))])
-    #         pi = np.take_along_axis(sample_prob, np.expand_dims(actions, axis=1), axis=1).flatten()
-    #
-    #         data_dict = {
-    #             'target_prob': target_prob,
-    #             'vpi': vpi,
-    #             'contexts': self.all_X,  # TODO: waht is the context?
-    #             'actions': actions,
-    #             'feedbacks': feedbacks,
-    #             'pbi': pi,
-    #             'num_action': new_Y.shape[1]
-    #         }
-    #         print('saving data/ml-25m/ns_data_{}'.format(round_id))
-    #         np.save('data/ml-25m/ns_data_{}'.format(round_id), data_dict)

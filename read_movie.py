@@ -67,7 +67,6 @@ for round_id in range(num_round):
     user_count = 0
     for user_id in active_userId_list:
         merge_df = pd.merge(this_round_df[this_round_df['userId'] == user_id][['userId', 'movieId', 'rating']], movies_df)
-        # print(merge_df[['userId', 'movieId', 'rating', 'genres']])
         movie_count = np.zeros([len(genre_dict)])
         for index, row in merge_df.iterrows():
             genre_index = list(map(genre_index_map, row['genres'].split('|')))
@@ -79,11 +78,3 @@ for round_id in range(num_round):
     all_Ys.append(rating_mat)
 
 np.save('data/ml-25m/ns_data_Y_{}_{}'.format(num_round, num_day_per_round), all_Ys)
-
-# check non-stationary
-# [Ys[100, [0, 10, 13]] for Ys in all_Ys]
-random_users = np.random.choice(num_user, 1)
-random_genre = np.random.choice(18, 5)
-plt.plot(np.stack([Ys[-1, random_genre] for Ys in all_Ys]))
-plt.show()
-plt.close()

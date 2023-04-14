@@ -71,7 +71,6 @@ class NSBanditTree():
         self.num_action = 2
         self.horizon = 5
         self.num_state = self.num_action**self.horizon - 1
-        # np.random.seed(1687)
         self.rng = np.random.RandomState(1687)  # random seed for this env
 
         speed = 0.25
@@ -88,7 +87,6 @@ class NSBanditTree():
 
     def next_round(self):
         self.round_id += 1
-        # np.random.seed(1687 + self.round_id)
         print('environment round {}'.format(self.round_id))
         ns_reward = self.mean_line + self.amplitude * np.sin(self.round_id * self.frequency) + self.rng.randn() * self.stds
         self.reward_vector = ns_reward.clip(min=0, max=1)
@@ -112,7 +110,6 @@ class NSBanditTree():
         else:
             raise ValueError('action must be 0 or 1.')
 
-        # print(self.t, self.state, base_state, increment_state, action, new_state)
         r = self.reward_vector[self.state, action]
         if self.t == self.horizon:
             done = True
@@ -124,7 +121,6 @@ class NSBanditTree():
         return self.state, r, done, {}
 
     def evaluate_policy(self, target_policy):
-        # TODO
         # target_policy has shape (num_state, num_action)
         visitation_prob = np.zeros([self.num_state])
 
@@ -183,7 +179,6 @@ class NSRLEnv():
 
     def generate_data(self, num_round, temp):
         # generate target policy
-        # env = NSChain()
         print('generating data.')
         self.num_round = num_round
         env = NSBanditTree()
@@ -214,7 +209,6 @@ class NSRLEnv():
         if self.target_policy is None:
             self.read_data()
 
-        # env = NSChainEnv()
         env = NSBanditTree()
         agent = Agent(env.num_state, env.num_action)
         agent.reset()
@@ -225,9 +219,6 @@ class NSRLEnv():
             np.random.seed(fix_seed + round_id)
 
             env.next_round()
-            # np.random.seed(fix_seed + round_id)
-            # ns_reward = self.all_reward[round_id]
-            # env.set_reward(ns_reward)
             sample_trajectory = []
             sample_feedbacks = np.zeros([sample_size])
             sample_pb = np.zeros([sample_size])
@@ -254,7 +245,6 @@ class NSRLEnv():
                 sample_pb[episode_id] = pb_ratio
                 sample_pt[episode_id] = pt_ratio
 
-            # vpi = env.evaluate_policy(self.target_policy)
             # check if vpi is correct
             total_return = 0
             for _ in range(1000):
@@ -284,5 +274,4 @@ class NSRLEnv():
             }
             data_list.append(data_dict)
 
-        # np.save('data/{}/ns_sample_data'.format(self.dir_name), data_list)
         np.save(data_name, data_list)

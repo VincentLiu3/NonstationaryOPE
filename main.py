@@ -499,7 +499,6 @@ if __name__ == '__main__':
 
                 if window_size > 0:
                     # Diff
-                    # total_proxy = proxy_Y * data_dict['target_prob'] / data_dict['target_prob'].sum()
                     proxy = old_mb_values
                     hat_diff = np.mean(pti / pbi * (yi - old_mb_values))
                     diff_vpi = old_mb_values + hat_diff
@@ -523,8 +522,6 @@ if __name__ == '__main__':
 
                     new_row = {'run': run_id, 'round': round_id, 'estimator': 'Reg', 'estimation': reg_vpi, 'std': np.sqrt(var_reg), 'error': reg_vpi-true_vpi}
                     all_rows.append(new_row)
-
-                    # TODO: PDIS wit Reg
 
                     old_mb_values = mb_values
 
