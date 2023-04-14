@@ -1,0 +1,84 @@
+import numpy as np
+from sklearn.svm import SVC
+from sklearn.decomposition import NMF
+from sklearn.multioutput import MultiOutputClassifier
+from env.NSClassification import NSBaseEnv
+
+
+class NSMovieLens(NSBaseEnv):
+    def __init__(self):
+        super(NSMovieLens, self).__init__()
+        self.dir_name = 'ml-25m'
+        self.num_round = 25
+        self.num_day_per_round = 60
+        self.max_r = 5.0
+        self.min_r = 0.0
+        self.feature_dim = 32
+
+    def read_data(self):
+        print('read data')
+
+        self.all_Ys = np.load('data/{}/ns_data_Y_{}_{}.npy'.format(self.dir_name, self.num_round, self.num_day_per_round), allow_pickle=True)
+        self.target_prob = np.load('data/{}/target_prob.npy'.format(self.dir_name), allow_pickle=True)
+        self.all_X = np.load('data/{}/population_X.npy'.format(self.dir_name), allow_pickle=True)
+
+    def generate_data(self, num_round, temp):
+        self.all_Ys = np.load('data/{}/ns_data_Y_{}_{}.npy'.format(self.dir_name, self.num_round, self.num_day_per_round), allow_pickle=True)
+
+        average_Y = np.zeros(self.all_Ys[0].shape)
+        for Ys in self.all_Ys:
+            average_Y += Ys
+        average_Y /= len(self.all_Ys)
+
+        nmf = NMF(n_components=self.feature_dim, max_iter=1000)
+        X = nmf.fit_transform(average_Y)
+        # H = nmf.components_
+        # nR = np.dot(X, H)
+        Y = (average_Y >= 2.5).astype(np.float32)
+
+        # train a policy on training set and compute the value of the policy on testing set
+        clf = SVC(kernel='linear', C=1.0, probability=True)
+        multi_clf = MultiOutputClassifier(clf, n_jobs=None)
+        multi_clf.fit(X, np.asarray(Y))
+
+        # compute the value of the policy on testing set
+        output_prob = multi_clf.predict_proba(X)
+        output_prob = np.stack([output_prob[i][:, 1] for i in range(len(output_prob))], axis=1)
+        self.target_prob = np.exp(temp * output_prob) / np.sum(np.exp(temp * output_prob), axis=1, keepdims=True)
+        self.all_X = X
+        np.save('data/{}/target_prob'.format(self.dir_name), self.target_prob)
+        np.save('data/{}/population_X'.format(self.dir_name), self.all_X)
+
+    # def sample_data(self):
+    #     if self.all_Ys is None or self.target_prob is None or self.all_X is None:
+    #         self.read_data()
+    #
+    #     num_round = len(self.all_Ys)
+    #     target_prob = self.target_prob
+    #
+    #     for round_id in range(num_round):
+    #         print('sample data round {}'.format(round_id))
+    #         np.random.seed(1567 + round_id)
+    #         new_Y = self.all_Ys[round_id]
+    #         vpi = np.multiply(new_Y, target_prob).sum(axis=1)
+    #
+    #         # sample a dataset
+    #         sample_prob = np.ones(new_Y.shape) / new_Y.shape[1]
+    #
+    #         c = sample_prob.cumsum(axis=1)
+    #         u = np.random.rand(len(c), 1)
+    #         actions = (u < c).argmax(axis=1)
+    #         feedbacks = np.array([new_Y[i, actions[i]] for i in range(len(c))])
+    #         pi = np.take_along_axis(sample_prob, np.expand_dims(actions, axis=1), axis=1).flatten()
+    #
+    #         data_dict = {
+    #             'target_prob': target_prob,
+    #             'vpi': vpi,
+    #             'contexts': self.all_X,  # TODO: waht is the context?
+    #             'actions': actions,
+    #             'feedbacks': feedbacks,
+    #             'pbi': pi,
+    #             'num_action': new_Y.shape[1]
+    #         }
+    #         print('saving data/ml-25m/ns_data_{}'.format(round_id))
+    #         np.save('data/ml-25m/ns_data_{}'.format(round_id), data_dict)
